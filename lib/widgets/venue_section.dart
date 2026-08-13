@@ -23,16 +23,13 @@ class ChurchSection extends StatelessWidget {
     if (kIsWeb) {
       await launchUrl(
         uri,
-        webOnlyWindowName: '_blank',
+        webOnlyWindowName: '_self',
+        mode: LaunchMode.platformDefault,
       );
-      return;
-    }
-
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
+    } else {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
+      }
     }
   }
 

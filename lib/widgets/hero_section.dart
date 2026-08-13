@@ -237,11 +237,7 @@ class HeroSection extends StatelessWidget {
 
               GestureDetector(
                 onTap: onChevronTap,
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 26,
-                  color: AppColors.olive,
-                ),
+                child: _BouncingChevron(color: AppColors.olive),
               ),
 
               const SizedBox(height: 18),
@@ -351,6 +347,62 @@ class _PulsingHeartDividerState extends State<_PulsingHeartDivider>
           color: AppColors.gold.withOpacity(0.4),
         ),
       ],
+    );
+  }
+}
+
+// ============================================================
+// BOUNCING CHEVRON (نزول وطلوع بسيط يوحي بإن فيه سكرول)
+// ============================================================
+
+class _BouncingChevron extends StatefulWidget {
+  const _BouncingChevron({required this.color});
+
+  final Color color;
+
+  @override
+  State<_BouncingChevron> createState() => _BouncingChevronState();
+}
+
+class _BouncingChevronState extends State<_BouncingChevron>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _offset;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat(reverse: true);
+
+    _offset = Tween<double>(begin: 0, end: 7).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _offset,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _offset.value),
+          child: child,
+        );
+      },
+      child: Icon(
+        Icons.keyboard_arrow_down,
+        size: 26,
+        color: widget.color,
+      ),
     );
   }
 }

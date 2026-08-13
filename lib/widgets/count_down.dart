@@ -67,7 +67,7 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
     _remaining = _calculateRemaining();
     _timer = Timer.periodic(
       const Duration(seconds: 1),
-      (_) => setState(() => _remaining = _calculateRemaining()),
+          (_) => setState(() => _remaining = _calculateRemaining()),
     );
   }
 
@@ -112,7 +112,9 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
         // tags shrink with screen width, same responsive clamp as
         // before, capped so 4 of them plus gaps never overflow w
         final tagWidth = (w * 0.16).clamp(52.0, 130.0);
-        final tagHeight = tagWidth * 1.32;
+        // Made the tag a bit taller (1.32 -> 1.48) so the number
+        // section has more breathing room and reads bigger.
+        final tagHeight = tagWidth * 1.48;
         final stringLen = tagHeight * 0.16;
 
         // ── FIX: real required stack height ──
@@ -127,7 +129,7 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
         // in particular was never even used inside `_HangingTag`.)
         final maxHookFraction = List<double>.generate(
           _hookAnchors.length,
-          (i) => _hookAnchors[i].dy + _hookVerticalNudge[i],
+              (i) => _hookAnchors[i].dy + _hookVerticalNudge[i],
         ).reduce(math.max);
         final tagsBottom = plantHeight * maxHookFraction + tagHeight;
         final stackHeight = math.max(plantHeight, tagsBottom);
@@ -191,19 +193,19 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
                   ),
                 ),
               ),
-          Transform.translate(
-            offset: const Offset(0, -20),
-            child: SizedBox(
-                child: Text(
-                  loc.countdownDate,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.cormorantGaramond(
-                    fontSize: (w * 0.03).clamp(15.0, 22.0),
-                    letterSpacing: 3,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
-                  ),
-                )
+              Transform.translate(
+                offset: const Offset(0, -20),
+                child: SizedBox(
+                    child: Text(
+                      loc.countdownDate,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.cormorantGaramond(
+                        fontSize: (w * 0.03).clamp(15.0, 22.0),
+                        letterSpacing: 3,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.ink,
+                      ),
+                    )
                 ),
               ),
             ],
@@ -253,18 +255,20 @@ class _HangingTag extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Number section made bigger so it fills the extra
+                // tag height (font size bumped 0.36 -> 0.42).
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
                     value,
                     style: GoogleFonts.playfairDisplay(
-                      fontSize: width * 0.36,
+                      fontSize: width * 0.42,
                       fontWeight: FontWeight.w600,
                       color: AppColors.ink,
                     ),
                   ),
                 ),
-                SizedBox(height: height * 0.045),
+                SizedBox(height: height * 0.05),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -276,7 +280,7 @@ class _HangingTag extends StatelessWidget {
                     Transform.rotate(
                       angle: math.pi / 4,
                       child:
-                          Container(width: 5, height: 5, color: AppColors.gold),
+                      Container(width: 5, height: 5, color: AppColors.gold),
                     ),
                     SizedBox(width: width * 0.03),
                     Container(
@@ -292,7 +296,6 @@ class _HangingTag extends StatelessWidget {
                     label,
                     style: GoogleFonts.cormorantGaramond(
                       fontSize: width * 0.18,
-                      letterSpacing: 2,
                       fontWeight: FontWeight.w800,
                       color: AppColors.inkSoft,
                     ),

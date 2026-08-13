@@ -164,6 +164,7 @@
             display: flex;
 
             align-items: center;
+
             justify-content: center;
 
             overflow: hidden;
@@ -1111,9 +1112,11 @@
     const splashStartTime =
         Date.now();
 
-
+    // Minimum time the splash stays visible, no matter how fast
+    // Flutter/images finish — bumped to 3s (was 2s) so it never
+    // feels like it "skips" the splash on fast connections.
     const minSplashDuration =
-        2000;
+        3000;
 
 
     let splashHidden =
@@ -1123,11 +1126,38 @@
     let flutterReady =
         false;
 
+    let imagesReady =
+        false;
+
+    // Preload the two hero images used right after the splash, so
+    // they don't visibly pop/flash in once the loading screen is
+    // gone. Flutter Web serves assets under assets/assets/... — same
+    // pattern as the rest of this file's images.
+    const criticalImages = [
+        'assets/assets/images/b.png',
+        'assets/assets/images/2.png',
+    ];
+
+    let loadedCount = 0;
+
+    criticalImages.forEach((src) => {
+        const img = new Image();
+        img.onload = img.onerror = () => {
+            loadedCount++;
+            if (loadedCount === criticalImages.length) {
+                imagesReady = true;
+                tryHideSplash();
+            }
+        };
+        img.src = src;
+    });
+
 
     function tryHideSplash() {
 
         if (
             !flutterReady ||
+            !imagesReady ||
             splashHidden
         ) {
 
@@ -1206,6 +1236,8 @@
     setTimeout(() => {
 
         flutterReady = true;
+
+        imagesReady = true;
 
         tryHideSplash();
 

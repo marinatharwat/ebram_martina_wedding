@@ -677,14 +677,10 @@ class _RsvpSectionState extends State<RsvpSection>
               ],
             ),
             child: ClipOval(
-              child: Transform.scale(
-                scale: 1.2,
-                alignment: const Alignment(0, 0.25),
-                child: Image.asset(
-                  'assets/images/5.jpeg',
-                  fit: BoxFit.cover,
-                  alignment: const Alignment(0, 0.15),
-                ),
+              child: Image.asset(
+                'assets/images/message.jpeg',
+                fit: BoxFit.cover,
+                alignment: const Alignment(0, 0.15),
               ),
             ),
           ),

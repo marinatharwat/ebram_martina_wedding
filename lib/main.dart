@@ -274,7 +274,6 @@ class _WeddingInvitationPageState extends State<WeddingInvitationPage> {
                       loc: loc,
                       onChevronTap: _scrollToDatePicker,
                     ),
-                    const SizedBox(height: 50),
                     Center(
                       child: MemoriesSection(
                         title: loc.photosTitle,
