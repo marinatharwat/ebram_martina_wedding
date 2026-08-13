@@ -97,7 +97,7 @@ class _MomentoInstagramWidgetState extends State<MomentoInstagramWidget> {
         const Align(
           alignment: Alignment.centerRight,
           child: Text(
-            'v2.0.0',
+            'v1.0.0',
             style: TextStyle(
               fontSize: 9,
               letterSpacing: 1.5,

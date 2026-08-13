@@ -60,6 +60,16 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
   late Duration _remaining;
   late DateTime _target;
 
+  // ── FIX #2: don't paint on the very first (often bogus) layout
+  // pass. In-app WebViews (Messenger, Instagram, etc. on Android)
+  // frequently report a wrong/narrow viewport width on the first
+  // frame or two before settling on the real one. Painting
+  // immediately bakes that wrong width into the countdown's layout
+  // and shows briefly as horizontal overflow ("text escaping the
+  // container"). Waiting one frame + a short delay lets the WebView
+  // settle before we ever compute `w`.
+  bool _readyToRender = false;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +79,12 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
       const Duration(seconds: 1),
           (_) => setState(() => _remaining = _calculateRemaining()),
     );
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 80), () {
+        if (mounted) setState(() => _readyToRender = true);
+      });
+    });
   }
 
   Duration _calculateRemaining() {
@@ -102,31 +118,29 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final w = (constraints.maxWidth - 24).clamp(240.0, 900.0);
-        // Box height is derived from the SAME aspect ratio as the
-        // asset, so BoxFit.contain never has to letterbox — and it
-        // can never crop either, unlike BoxFit.cover/fill would if the
-        // real asset ratio drifts slightly from the constant above.
+        // ── FIX #2 (cont.): show nothing (zero height) until the
+        // layout has had a moment to settle. This avoids a visible
+        // "flash" of an overflowed/garbled countdown on first paint
+        // inside in-app browsers.
+        if (!_readyToRender) {
+          return const SizedBox.shrink();
+        }
+
+        // ── FIX #1: lowered the minimum clamp from 240 -> 160.
+        // Some in-app WebViews (Messenger's Android WebView chief
+        // among them) can report a `constraints.maxWidth` narrower
+        // than 240 on early frames. The old clamp forced `w` to stay
+        // at 240 regardless, so the widget rendered WIDER than the
+        // actual available space -> horizontal overflow. 160 is a
+        // safer floor that still keeps the tags legible.
+        final w = (constraints.maxWidth - 24).clamp(160.0, 900.0);
+
         final plantHeight = w / _plantAspectRatio;
 
-        // tags shrink with screen width, same responsive clamp as
-        // before, capped so 4 of them plus gaps never overflow w
         final tagWidth = (w * 0.16).clamp(52.0, 130.0);
-        // Made the tag a bit taller (1.32 -> 1.48) so the number
-        // section has more breathing room and reads bigger.
         final tagHeight = tagWidth * 1.48;
         final stringLen = tagHeight * 0.16;
 
-        // ── FIX: real required stack height ──
-        // Tags don't sit BELOW the image — they hang INSIDE it, at
-        // `hookAnchor.dy` (+ nudge) fraction of plantHeight. So the
-        // box only needs to be as tall as whichever is bigger: the
-        // full image, or the lowest point any tag actually reaches.
-        // (Previously this summed plantHeight + tagHeight + stringLen
-        // + maxNudge on top of each other, which reserved way more
-        // space than anything ever painted into — that leftover
-        // space is what was showing up as an extra gap. `stringLen`
-        // in particular was never even used inside `_HangingTag`.)
         final maxHookFraction = List<double>.generate(
           _hookAnchors.length,
               (i) => _hookAnchors[i].dy + _hookVerticalNudge[i],
@@ -134,81 +148,80 @@ class _WeddingCountdownGarlandState extends State<WeddingCountdownGarland> {
         final tagsBottom = plantHeight * maxHookFraction + tagHeight;
         final stackHeight = math.max(plantHeight, tagsBottom);
 
-        return Container(
-          width: double.infinity,
-          color: Colors.transparent,
-          padding: EdgeInsets.zero,
-          child: Column(
-            children: [
-              CountingDownHeader(
-                width: 0.20,
-                loc: loc,
-              ),
-              // ── garland image with tags hanging from its hooks ──
-              // (no more Transform.translate hack here — the box is
-              // now sized correctly, so nothing needs to be dragged
-              // up to hide leftover space)
-              Transform.translate(
-                offset: const Offset(0, -35),
-                child: SizedBox(
-                  width: w,
-                  height: stackHeight,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        width: w,
-                        height: plantHeight,
-                        // BoxFit.contain: the whole garland is always
-                        // fully visible, on any screen width, with no
-                        // side cropping — worst case is a hair of empty
-                        // space if _plantAspectRatio isn't a perfect
-                        // match for your actual PNG.
-                        child: Center(
-                          child: Image.asset(
-                            widget.plantAsset,
-                            width: w,
-                            height: plantHeight,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      for (int i = 0; i < 4; i++)
+        // ── FIX #3: safety-net clip. Even with fixes #1 and #2,
+        // wrap the whole block in a ClipRect tied to the *actual*
+        // available width (constraints.maxWidth), not just the
+        // image's own bounds. If any measurement is ever off by a
+        // few pixels on a weird WebView, content gets clipped
+        // instead of visibly spilling outside the screen.
+        return ClipRect(
+          child: Container(
+            width: double.infinity,
+            color: Colors.transparent,
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                CountingDownHeader(
+                  width: 0.20,
+                  loc: loc,
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -35),
+                  child: SizedBox(
+                    width: w,
+                    height: stackHeight,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
                         Positioned(
-                          left: w * _hookAnchors[i].dx - tagWidth / 2,
-                          top: plantHeight *
-                              (_hookAnchors[i].dy + _hookVerticalNudge[i]),
-                          width: tagWidth,
-                          child: _HangingTag(
-                            value: values[i],
-                            label: labels[i],
-                            width: tagWidth,
-                            height: tagHeight,
-                            stringLength: stringLen,
+                          top: 0,
+                          left: 0,
+                          width: w,
+                          height: plantHeight,
+                          child: Center(
+                            child: Image.asset(
+                              widget.plantAsset,
+                              width: w,
+                              height: plantHeight,
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
-                    ],
+                        for (int i = 0; i < 4; i++)
+                          Positioned(
+                            left: w * _hookAnchors[i].dx - tagWidth / 2,
+                            top: plantHeight *
+                                (_hookAnchors[i].dy + _hookVerticalNudge[i]),
+                            width: tagWidth,
+                            child: _HangingTag(
+                              value: values[i],
+                              label: labels[i],
+                              width: tagWidth,
+                              height: tagHeight,
+                              stringLength: stringLen,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Transform.translate(
-                offset: const Offset(0, -20),
-                child: SizedBox(
-                    child: Text(
-                      loc.countdownDate,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.cormorantGaramond(
-                        fontSize: (w * 0.03).clamp(15.0, 22.0),
-                        letterSpacing: 3,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.ink,
-                      ),
-                    )
+                Transform.translate(
+                  offset: const Offset(0, -20),
+                  child: SizedBox(
+                      child: Text(
+                        loc.countdownDate,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.cormorantGaramond(
+                          fontSize: (w * 0.03).clamp(15.0, 22.0),
+                          letterSpacing: 3,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.ink,
+                        ),
+                      )
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -255,8 +268,6 @@ class _HangingTag extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Number section made bigger so it fills the extra
-                // tag height (font size bumped 0.36 -> 0.42).
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -334,7 +345,6 @@ class _TagClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant _TagClipper oldClipper) => oldClipper.cut != cut;
 }
 
-
 // small gold/rose heart used above the title and in the date row
 class _HeartPainter extends CustomPainter {
   _HeartPainter({required this.color});
@@ -360,7 +370,6 @@ class _HeartPainter extends CustomPainter {
 // small flourish divider (sprigs + diamond/heart)
 // ─────────────────────────────────────────────
 
-// constants — point this at wherever you put the leaf image.
 const String kLeafAsset = 'assets/images/leaf.png';
 
 /// "Counting down / TO OUR FOREVER" header with a leaf sprig on each
@@ -386,7 +395,6 @@ class CountingDownHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // ── center: heart + title ──
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -394,7 +402,7 @@ class CountingDownHeader extends StatelessWidget {
               const _PulsingHeart(),
               const SizedBox(height: 4),
               Text(
-                effectiveLoc.heroCountdownTitle, // "Counting down"
+                effectiveLoc.heroCountdownTitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.cormorantGaramond(
                   fontSize: 32,
@@ -406,7 +414,7 @@ class CountingDownHeader extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                effectiveLoc.heroCountdownSubtitle, // "TO OUR FOREVER"
+                effectiveLoc.heroCountdownSubtitle,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.cormorantGaramond(
                   fontSize: (width * 0.026).clamp(16.0, 24.0),
