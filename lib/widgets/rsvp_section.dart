@@ -680,7 +680,6 @@ class _RsvpSectionState extends State<RsvpSection>
               child: Image.asset(
                 'assets/images/image_message.jpeg',
                 fit: BoxFit.cover,
-                alignment: const Alignment(0, 0.15),
               ),
             ),
           ),
