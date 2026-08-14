@@ -678,7 +678,7 @@ class _RsvpSectionState extends State<RsvpSection>
             ),
             child: ClipOval(
               child: Image.asset(
-                'assets/images/message.jpeg',
+                'assets/images/image_message.jpeg',
                 fit: BoxFit.cover,
                 alignment: const Alignment(0, 0.15),
               ),
