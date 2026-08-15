@@ -79,7 +79,6 @@ class LanguageToggle extends StatelessWidget {
     );
   }
 }
-
 class _LangTab extends StatelessWidget {
   const _LangTab({required this.label, required this.active});
 
@@ -92,19 +91,22 @@ class _LangTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       height: 40,
-      width: 50,
       duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: active ? AppColors.ink : Colors.transparent,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(6.0),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
         child: Text(
           label,
           textDirection:
           _isArabicLabel ? TextDirection.rtl : TextDirection.ltr,
           textAlign: TextAlign.center,
+          maxLines: 1,
+          softWrap: false,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
@@ -115,7 +117,6 @@ class _LangTab extends StatelessWidget {
     );
   }
 }
-
 class _MusicButton extends StatelessWidget {
   const _MusicButton({
     required this.isPlaying,

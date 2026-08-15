@@ -265,12 +265,16 @@ class _HangingTag extends StatelessWidget {
               vertical: height * 0.09,
               horizontal: width * 0.06,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
+            alignment: Alignment.center,
+            // ⬇️ FittedBox واحد بيحمي كل المحتوى مع بعضه كوحدة،
+            // بدل ما كل عنصر يتحمي لوحده وممكن المجموع يفيض
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
                     value,
                     style: GoogleFonts.playfairDisplay(
                       fontSize: width * 0.42,
@@ -278,32 +282,29 @@ class _HangingTag extends StatelessWidget {
                       color: AppColors.ink,
                     ),
                   ),
-                ),
-                SizedBox(height: height * 0.05),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                        width: width * 0.16,
-                        height: 0.8,
-                        color: AppColors.gold),
-                    SizedBox(width: width * 0.03),
-                    Transform.rotate(
-                      angle: math.pi / 4,
-                      child:
-                      Container(width: 5, height: 5, color: AppColors.gold),
-                    ),
-                    SizedBox(width: width * 0.03),
-                    Container(
-                        width: width * 0.16,
-                        height: 0.8,
-                        color: AppColors.gold),
-                  ],
-                ),
-                SizedBox(height: height * 0.05),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
+                  SizedBox(height: height * 0.05),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                          width: width * 0.16,
+                          height: 0.8,
+                          color: AppColors.gold),
+                      SizedBox(width: width * 0.03),
+                      Transform.rotate(
+                        angle: math.pi / 4,
+                        child: Container(
+                            width: 5, height: 5, color: AppColors.gold),
+                      ),
+                      SizedBox(width: width * 0.03),
+                      Container(
+                          width: width * 0.16,
+                          height: 0.8,
+                          color: AppColors.gold),
+                    ],
+                  ),
+                  SizedBox(height: height * 0.05),
+                  Text(
                     label,
                     style: GoogleFonts.cormorantGaramond(
                       fontSize: width * 0.18,
@@ -311,8 +312,8 @@ class _HangingTag extends StatelessWidget {
                       color: AppColors.inkSoft,
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -320,7 +321,6 @@ class _HangingTag extends StatelessWidget {
     );
   }
 }
-
 class _TagClipper extends CustomClipper<Path> {
   _TagClipper({required this.cut});
 
